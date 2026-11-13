@@ -4,6 +4,7 @@
 ]]
 
 if not Recount then return end --  Forget about this if no Recount is present
+if Recount.AbsorbSpellDuration then return end
 
 local Recount = Recount
 
@@ -54,7 +55,7 @@ end
 
 -- The data on the panel
 function Rhga:DataModesHealAndGuessedAbsorbs(data, num)
- 	if not data then return 0, 0 end
+ 	if not data or not data.Fights or not data.Fights[Recount.db.profile.CurDataSet] then return 0, 0 end
  	if num==1 then
 		--return ((data.Fights[Recount.db.profile.CurDataSet].GuessedAbsorbs or 0)+(data.Fights[Recount.db.profile.CurDataSet].Healing or 0)), ((data.Fights[Recount.db.profile.CurDataSet].GuessedAbsorbs or 0)+(data.Fights[Recount.db.profile.CurDataSet].Healing or 0))/((data.Fights[Recount.db.profile.CurDataSet].ActiveTime or 0) + Epsilon)
 		local healing, hps = Recount:MergedPetHealingDPS(data,Recount.db.profile.CurDataSet)
@@ -82,6 +83,7 @@ end
 
 -- On over function
 function Rhga:TooltipFuncsHealGuessedAbsorbs(name,data)
+	if not data or not data.Fights or not data.Fights[Recount.db.profile.CurDataSet] then return end
 	local SortedData,total
 	GameTooltip:ClearLines()
 	GameTooltip:AddLine(name)
