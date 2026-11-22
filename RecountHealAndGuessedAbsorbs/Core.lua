@@ -4,7 +4,6 @@
 ]]
 
 if not Recount then return end --  Forget about this if no Recount is present
-if Recount.AbsorbSpellDuration then return end
 
 local Recount = Recount
 
@@ -37,74 +36,54 @@ DetailTitles.ShieldedWho={
 	BotAmount = RL["Count"]
 }
 
--- global OnEnable
-function Rhga:OnEnable()
-
-	if not Recount then return end -- No recount found
-
-    --Parser Events
-	--RecountGuessedAbsorbs:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED","CombatLogEvent")
-	
-	-- fill upvalues with meaningful data
+local function GetHealAndAbsorb(data, fight)
+	local healing, hps = Recount:MergedPetHealingDPS(data, Recount.db.profile.CurDataSet)
+	if not Recount.db.profile.MergeAbsorbs then
+		local absorbs = fight.Absorbs or 0
+		healing = healing + absorbs
+		hps = hps + absorbs / ((fight.ActiveTime or 0) + Epsilon)
+	end
+	return healing, hps
 end
 
--- global OnDisable
-function Rhga:OnDisable()
-	Recount:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+local function GetHealAndAbsorbTable(fight)
+	if Recount.db.profile.MergeAbsorbs then
+		return fight.Heals
+	end
+	local merged = Recount:GetTable()
+	if fight.Absorbed then
+		for k,v in pairs(fight.Absorbed) do
+			merged[k] = v
+		end
+	end
+
+	if fight.Heals then
+		for k,v in pairs(fight.Heals) do
+			merged[k] = v
+		end
+	end
+	return merged
 end
 
 -- The data on the panel
 function Rhga:DataModesHealAndGuessedAbsorbs(data, num)
- 	if not data or not data.Fights or not data.Fights[Recount.db.profile.CurDataSet] then return 0, 0 end
- 	if num==1 then
-		--return ((data.Fights[Recount.db.profile.CurDataSet].GuessedAbsorbs or 0)+(data.Fights[Recount.db.profile.CurDataSet].Healing or 0)), ((data.Fights[Recount.db.profile.CurDataSet].GuessedAbsorbs or 0)+(data.Fights[Recount.db.profile.CurDataSet].Healing or 0))/((data.Fights[Recount.db.profile.CurDataSet].ActiveTime or 0) + Epsilon)
-		local healing, hps = Recount:MergedPetHealingDPS(data,Recount.db.profile.CurDataSet)
-		return ((data.Fights[Recount.db.profile.CurDataSet].GuessedAbsorbs or 0)+healing), (data.Fights[Recount.db.profile.CurDataSet].GuessedAbsorbs or 0)/((data.Fights[Recount.db.profile.CurDataSet].ActiveTime or 0) + Epsilon) + hps
- 	else
-		local healing, hps = Recount:MergedPetHealingDPS(data,Recount.db.profile.CurDataSet)
-		local ga = data.Fights[Recount.db.profile.CurDataSet].GuessedAbsorbed
-		local he = data.Fights[Recount.db.profile.CurDataSet].Heals
-		local gahe = Recount:GetTable()
-		if ga then
-			for k,v in pairs(ga) do
-				gahe[k] = v
-			end
-		end
-
-		if he then
-			for k,v in pairs(he) do
-				gahe[k] = v
-			end
-		end
- 		return ((data.Fights[Recount.db.profile.CurDataSet].GuessedAbsorbs or 0)+healing), {{gahe,L["Heal & absorb"],DetailTitles.GuessedAbsorbed},{data.Fights[Recount.db.profile.CurDataSet].ShieldedWho," "..L["Shielded Who"],DetailTitles.ShieldedWho}}
- 	end
+	if not data or not data.Fights or not data.Fights[Recount.db.profile.CurDataSet] then return 0, 0 end
+	local fight = data.Fights[Recount.db.profile.CurDataSet]
+	local healing, hps = GetHealAndAbsorb(data, fight)
+	if num==1 then
+		return healing, hps
+	else
+		return healing, {{GetHealAndAbsorbTable(fight),L["Heal & absorb"],DetailTitles.GuessedAbsorbed},{fight.ShieldedWho," "..L["Shielded Who"],DetailTitles.ShieldedWho}}
+	end
 end
 
 
 -- On over function
 function Rhga:TooltipFuncsHealGuessedAbsorbs(name,data)
 	if not data or not data.Fights or not data.Fights[Recount.db.profile.CurDataSet] then return end
-	local SortedData,total
 	GameTooltip:ClearLines()
 	GameTooltip:AddLine(name)
-	local ga = data.Fights[Recount.db.profile.CurDataSet].GuessedAbsorbed
-	local he = data.Fights[Recount.db.profile.CurDataSet].Heals
-	local gahe = Recount:GetTable()
-	if ga then
-		for k,v in pairs(ga) do
-			gahe[k] = v
-		end
-	end
-
-	if he then
-		for k,v in pairs(he) do
-			gahe[k] = v
-		end
-	end
-	
-	Recount:AddSortedTooltipData(RL["Top 3"].." "..L["Heal & absorb"],data and data.Fights[Recount.db.profile.CurDataSet] and gahe,3)
-	--GameTooltip:AddLine("")
-	--Recount:AddSortedTooltipData(RL["Top 3"].." "..L["Healing"],data and data.Fights[Recount.db.profile.CurDataSet] and data.Fights[Recount.db.profile.CurDataSet].Heals,3)
+	Recount:AddSortedTooltipData(RL["Top 3"].." "..L["Heal & absorb"],GetHealAndAbsorbTable(data.Fights[Recount.db.profile.CurDataSet]),3)
 end
 
 -- Add the panel to recount

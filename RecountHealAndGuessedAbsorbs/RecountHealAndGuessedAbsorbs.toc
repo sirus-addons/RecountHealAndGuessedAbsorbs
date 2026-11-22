@@ -1,10 +1,10 @@
 ## Interface: 30300
 ## Title: RecountHealAndGuessedAbsorbs
 ## Author: Extrem
-## Notes: |@Version: 2@|A module for recount that merge heal and guessed absorb in a tab
-## Notes-ruRU: |@Version: 2@|Модуль для Recount, объединяющий исцеление и предполагаемое поглощение на одной вкладке
+## Notes: |@Version: 3@|A module for recount that merge heal and absorb in a tab
+## Notes-ruRU: |@Version: 3@|Модуль для Recount, объединяющий исцеление и поглощение на одной вкладке
 ## RequiredDeps: Recount
-## OptionalDeps: Ace3,Recount,RecountGuessedAbsorbs
+## OptionalDeps: Ace3,Recount
 ## X-Curse-Packaged-Version: 1.4
 ## X-Curse-Project-Name: RecountHealAndGuessedAbsorbs
 ## X-Curse-Project-ID: recounthealandabsorbs
